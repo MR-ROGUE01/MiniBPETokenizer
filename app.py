@@ -3,6 +3,7 @@ import pickle
 import logging
 import warnings
 import regex as re
+from functools import lru_cache
 import streamlit as st
 
 # Silence Windows asyncio socket reset messages and component re-registration logs
@@ -173,7 +174,7 @@ def live_textarea(value="", placeholder="", debounce=280, key="live_textarea_wid
     return live
 
 
-@st.cache_data(maxsize=1024)
+@lru_cache(maxsize=1024)
 def get_tokens_cached(text):
     ids = model.encode(text)
     pieces = model.get_tokens(ids)
