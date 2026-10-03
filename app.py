@@ -27,17 +27,32 @@ class CustomTokenizer:
     def encode(self, text):
         chunks = re.findall(self.pat, text)
         tokens = [b for c in chunks for b in c.encode("utf-8")]
+        if len(tokens) < 2:
+            return tokens
+
+        merges = self.merges
         while len(tokens) >= 2:
-            stats = {p: 0 for p in zip(tokens, tokens[1:])}
-            for p in zip(tokens, tokens[1:]):
-                stats[p] += 1
-            pair = min(stats, key=lambda p: self.merges.get(p, float("inf")))
-            if pair not in self.merges:
+            min_rank = float("inf")
+            best_pair = None
+            for i in range(len(tokens) - 1):
+                pair = (tokens[i], tokens[i + 1])
+                rank = merges.get(pair)
+                if rank is not None and rank < min_rank:
+                    min_rank = rank
+                    best_pair = pair
+                    if rank == 256:  # 256 is the absolute lowest merge rank
+                        break
+
+            if best_pair is None:
                 break
-            idx = self.merges[pair]
-            newids, i = [], 0
-            while i < len(tokens):
-                if i < len(tokens) - 1 and (tokens[i], tokens[i + 1]) == pair:
+
+            idx = merges[best_pair]
+            p0, p1 = best_pair
+            newids = []
+            i = 0
+            n = len(tokens)
+            while i < n:
+                if i < n - 1 and tokens[i] == p0 and tokens[i + 1] == p1:
                     newids.append(idx)
                     i += 2
                 else:
@@ -118,16 +133,26 @@ export default function({ parentElement, data, setStateValue }) {
     parentElement._initialized = true;
   }
 
-  parentElement._debounce = data.debounce ?? 280;
+  parentElement._debounce = data.debounce ?? 450;
 
   if (!parentElement._attached) {
     let timer = null;
-    input.addEventListener("input", () => {
+    let lastSent = input.value;
+
+    const triggerUpdate = () => {
       clearTimeout(timer);
       const delay = parentElement._debounce;
       timer = setTimeout(() => {
-        setStateValue("value", input.value);
+        if (input.value !== lastSent) {
+          lastSent = input.value;
+          setStateValue("value", input.value);
+        }
       }, delay);
+    };
+
+    input.addEventListener("input", triggerUpdate);
+    input.addEventListener("paste", () => {
+      setTimeout(triggerUpdate, 30);
     });
     parentElement._attached = true;
   }
@@ -148,7 +173,7 @@ def get_live_textarea_component():
 _live_textarea_component = get_live_textarea_component()
 
 
-def live_textarea(value="", placeholder="", debounce=280, key="live_textarea_widget"):
+def live_textarea(value="", placeholder="", debounce=450, key="live_textarea_widget"):
     internal_key = f"_comp_{key}"
     state = st.session_state.get(internal_key, {})
     current_value = state.get("value", value) if isinstance(state, dict) else value
@@ -174,7 +199,7 @@ def live_textarea(value="", placeholder="", debounce=280, key="live_textarea_wid
     return live
 
 
-@lru_cache(maxsize=1024)
+@lru_cache(maxsize=4096)
 def get_tokens_cached(text):
     ids = model.encode(text)
     pieces = model.get_tokens(ids)
@@ -201,8 +226,9 @@ def render_tiktokenizer_view(tokens_with_ids):
         return "<div style='color: #94a3b8; font-style: italic; padding: 16px;'>Start typing on the left to see tokens!</div>"
 
     spans = []
-    for i, (tid, piece) in enumerate(tokens_with_ids):
-        color = TOKEN_COLORS[i % len(TOKEN_COLORS)]
+    # Cap DOM rendering at first 1,200 tokens to keep browser buttery smooth
+    render_tokens = tokens_with_ids[:1200]
+    for i, (tid, piece) in enumerate(render_tokens):
         safe_piece = html.escape(piece)
         safe_piece = safe_piece.replace(" ", "·")
         
@@ -214,27 +240,13 @@ def render_tiktokenizer_view(tokens_with_ids):
 
         # Properly escape tooltip with quotes to prevent HTML tag breaking
         safe_tooltip = html.escape(f"Token ID: {tid} | Value: {repr(piece)}", quote=True)
-        
-        span = (
-            f'<span title="{safe_tooltip}" style="'
-            f'background-color: {color}; '
-            f'color: #0f172a; '
-            f'padding: 2px 3px; '
-            f'border-radius: 3px; '
-            f'margin: 0; '
-            f'display: inline; '
-            f'font-family: Consolas, \\"Courier New\\", monospace; '
-            f'font-size: 15px; '
-            f'cursor: pointer;">'
-            f'{inner_text}</span>'
-        )
-        spans.append(span)
+        spans.append(f'<span class="tok-chip tok-c{i % 8}" title="{safe_tooltip}">{inner_text}</span>')
 
-    return (
-        "<div class='visualizer-box'>"
-        + "".join(spans)
-        + "</div>"
-    )
+    trunc_msg = ""
+    if len(tokens_with_ids) > 1200:
+        trunc_msg = f"<div style='margin-top: 10px; font-size: 13px; color: #64748b; font-style: italic;'>... showing first 1,200 of {len(tokens_with_ids):,} tokens for optimal rendering speed</div>"
+
+    return f"<div class='visualizer-box'>{''.join(spans)}{trunc_msg}</div>"
 
 
 # =========================================================
@@ -334,6 +346,24 @@ st.markdown(
             margin-top: 12px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
+        .tok-chip {
+            color: #0f172a;
+            padding: 2px 3px;
+            border-radius: 3px;
+            margin: 0;
+            display: inline;
+            font-family: Consolas, 'Courier New', monospace;
+            font-size: 15px;
+            cursor: pointer;
+        }
+        .tok-c0 { background-color: #BAE6FD; }
+        .tok-c1 { background-color: #FDE68A; }
+        .tok-c2 { background-color: #A7F3D0; }
+        .tok-c3 { background-color: #FECDD3; }
+        .tok-c4 { background-color: #DDD6FE; }
+        .tok-c5 { background-color: #FED7AA; }
+        .tok-c6 { background-color: #E9D5FF; }
+        .tok-c7 { background-color: #CCFBF1; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -383,7 +413,7 @@ with col1:
     user_text = live_textarea(
         value=DEFAULT_TEXT,
         placeholder="Type or paste text here...",
-        debounce=280,
+        debounce=450,
         key="main_input",
     )
 
