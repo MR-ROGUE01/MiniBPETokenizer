@@ -111,20 +111,17 @@ export default function({ parentElement, data, setStateValue }) {
   const input = parentElement.querySelector("#input");
   input.placeholder = data.placeholder ?? "";
 
-  const pyValue = data.value ?? "";
-  if (pyValue === input.value) {
-    input._userTyping = false;
-  } else if (!input._userTyping) {
-    input.value = pyValue;
-    setStateValue("value", pyValue);
+  // Set initial value only once on mount to prevent infinite re-render loops
+  if (!parentElement._initialized) {
+    input.value = data.value ?? "";
+    parentElement._initialized = true;
   }
 
-  parentElement._debounce = data.debounce ?? 120;
+  parentElement._debounce = data.debounce ?? 280;
 
   if (!parentElement._attached) {
     let timer = null;
     input.addEventListener("input", () => {
-      input._userTyping = true;
       clearTimeout(timer);
       const delay = parentElement._debounce;
       timer = setTimeout(() => {
@@ -150,7 +147,7 @@ def get_live_textarea_component():
 _live_textarea_component = get_live_textarea_component()
 
 
-def live_textarea(value="", placeholder="", debounce=120, key="live_textarea_widget"):
+def live_textarea(value="", placeholder="", debounce=280, key="live_textarea_widget"):
     internal_key = f"_comp_{key}"
     state = st.session_state.get(internal_key, {})
     current_value = state.get("value", value) if isinstance(state, dict) else value
@@ -162,11 +159,11 @@ def live_textarea(value="", placeholder="", debounce=120, key="live_textarea_wid
 
     result = _live_textarea_component(
         data={
-            "value": current_value,
+            "value": value,
             "placeholder": placeholder,
             "debounce": debounce,
         },
-        default={"value": current_value},
+        default={"value": value},
         key=internal_key,
         on_value_change=_sync,
     )
@@ -174,6 +171,13 @@ def live_textarea(value="", placeholder="", debounce=120, key="live_textarea_wid
     live = val if val is not None else current_value
     st.session_state[key] = live
     return live
+
+
+@st.cache_data(maxsize=1024)
+def get_tokens_cached(text):
+    ids = model.encode(text)
+    pieces = model.get_tokens(ids)
+    return ids, pieces
 
 
 # =========================================================
@@ -378,15 +382,14 @@ with col1:
     user_text = live_textarea(
         value=DEFAULT_TEXT,
         placeholder="Type or paste text here...",
-        debounce=120,
+        debounce=280,
         key="main_input",
     )
 
 with col2:
     if user_text:
-        # Run inference using the loaded model
-        ids = model.encode(user_text)
-        pieces = model.get_tokens(ids)
+        # Ultra-fast cached inference
+        ids, pieces = get_tokens_cached(user_text)
         tokens_with_ids = list(zip(ids, pieces))
 
         # 1. Token Count Card (Bada & Clear)
