@@ -1,65 +1,92 @@
 # ⚡ MiniBPETokenizer
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python" alt="Python Version" />
-  <img src="https://img.shields.io/badge/Streamlit-App-FF4B4B?style=for-the-badge&logo=streamlit" alt="Streamlit" />
-  <img src="https://img.shields.io/badge/Algorithm-Byte--Level%20BPE-purple?style=for-the-badge" alt="Algorithm" />
-  <img src="https://img.shields.io/badge/Vocab%20Size-10%2C000-green?style=for-the-badge" alt="Vocab Size" />
-  <img src="https://img.shields.io/badge/Author-Raj%20Kumar%20Gupta-orange?style=for-the-badge" alt="Author" />
+  <a href="https://minibpetokenizer-mr-rogue01.streamlit.app/">
+    <img src="https://img.shields.io/badge/Live%20Demo-Streamlit%20Cloud-FF4B4B?style=for-the-badge&logo=streamlit" alt="Live Demo" />
+  </a>
+  <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python Version" />
+  <img src="https://img.shields.io/badge/Algorithm-Byte--Level%20BPE-7928CA?style=for-the-badge" alt="Algorithm" />
+  <img src="https://img.shields.io/badge/Vocab%20Size-10%2C000-10B981?style=for-the-badge" alt="Vocab Size" />
+  <img src="https://img.shields.io/badge/Author-Raj%20Kumar%20Gupta-F59E0B?style=for-the-badge" alt="Author" />
 </p>
 
-A custom **Byte-Level Byte Pair Encoding (BPE) Tokenizer** built completely from scratch in Python, inspired by **GPT-2 pre-tokenization** and Andrej Karpathy's `minbpe`. Features a high-performance interactive web visualizer modeled after **Tiktokenizer**.
+<p align="center">
+  <strong>A Byte-Level Byte Pair Encoding (BPE) Tokenizer built from scratch in pure Python.</strong><br>
+  Trained on technical text, mathematics, and code, paired with a real-time <strong>Tiktokenizer-style visualizer</strong>.
+</p>
+
+<p align="center">
+  🚀 <strong><a href="https://minibpetokenizer-mr-rogue01.streamlit.app/">Try the Live Web App Here</a></strong> 🚀
+</p>
 
 ---
 
-## 🌟 Key Features
+## 🌟 Overview
 
-- **Built from Scratch:** Pure Python implementation of the BPE merge algorithm, frequency statistics counting, and vocabulary building.
-- **GPT-2 Style Pre-Tokenization:** Regex-based pre-tokenization splitting punctuation, alphanumeric words, contractions (`'s`, `'ll`, etc.), and whitespace.
-- **10,000 Token Vocabulary:** 256 base UTF-8 byte tokens + 9,744 learned iterative merges saved as serialized artifacts.
-- **⚡ Instant Real-Time Typing:** Custom Streamlit Component v2 input with debounced keystrokes — updates tokens live without needing `Ctrl+Enter` or clicking away.
-- **🎨 Tiktokenizer-Style Visualizer:**
-  - Distinct pastel token badges that sit flush against each other.
-  - Middle dots (`·`) for space characters.
-  - Explicit `\n` indicators for linebreaks.
-  - Safe hexadecimal byte representation (`<0x..>`) for out-of-vocabulary UTF-8 fallback.
-  - Real-time token count and comma-separated token ID sequences.
+Before an LLM processes text, it splits sentences into numerical tokens. While production models rely on large C/Rust libraries (like HuggingFace Tokenizers or Tiktoken), **MiniBPETokenizer** was built from first principles in Python to understand how tokenization works under the hood:
+
+- **Zero Tokenizer Dependencies:** Pure Python implementation of BPE merge training, pair statistics, and greedy inference encoding.
+- **GPT-2 Pre-tokenization:** Uses regex to prevent merges across whitespace, punctuation, and contractions (`'s`, `'t`, `'re`, etc.).
+- **10,000 Vocabulary:** 256 base UTF-8 bytes + 9,744 learned merges saved as portable JSON and Pickle artifacts.
+- **Interactive Visualizer:** Real-time web visualizer modeled after Tiktokenizer with pastel token badges, middle dots (`·`) for whitespace, `\n` indicators, and hover tooltips for Token IDs.
 
 ---
 
-## 📊 Training Corpus & Domain Specialization
+## 📊 Training Corpus & Domain Coverage
 
-The tokenizer was trained on **~18,900 lines** (~866,000 characters) of curated technical and domain-specific text:
+Trained on **~18,900 lines** (~866,000 characters) of curated data:
 
-| Domain | Content Description |
+| Domain | Content Details |
 | :--- | :--- |
-| **English Natural Language** | Dialogues, questions & answers, academic prose, contractions, and conversational sentences. |
-| **Mathematics & Calculus** | Derivatives, differential equations, powers ($x^n$, $\omega^2$), and Greek letters ($\alpha, \beta, \omega, \nabla, \Sigma$). |
-| **Operators & Arithmetic** | Arithmetic expressions ($+$, $-$, $\times$, $\div$, $=$, $\neq$, $\le$, $\ge$, $\pm$). |
-| **Code & Databases** | Python functions, loops (`for`, `range()`), SQL database queries (`SELECT`, `WHERE`, `JOIN`). |
-
-> *Note: Scripts outside the Latin alphabet (such as Devanagari/Hindi) decompose into individual UTF-8 byte tokens.*
+| **English Natural Language** | Technical explanations, conversational prose, contractions, and common vocabulary. |
+| **Mathematics & Calculus** | Derivatives ($f'(x)$), integrals, exponents, and Greek variables ($\alpha, \beta, \omega, \nabla, \Sigma$). |
+| **Code Syntax** | Python functions, loops (`for`, `range()`), keywords, and SQL queries (`SELECT`, `WHERE`, `JOIN`). |
+| **Byte-Level UTF-8** | Base 256 byte vocabulary ensures zero Out-of-Vocabulary (OOV) crashes for any Unicode text. |
 
 ---
 
-## 📁 Project Structure
+## 🛠️ Quick Usage in Python
+
+You can load and use the trained tokenizer directly in your own code:
+
+```python
+import pickle
+import regex as re
+
+# Load the trained model
+with open("tokenizer.pkl", "rb") as f:
+    tokenizer = pickle.load(f)
+
+# Encode text into token IDs
+text = "Hello world! Building GPT from scratch."
+token_ids = tokenizer.encode(text)
+print("Token IDs:", token_ids)
+
+# Decode token IDs into individual token strings
+token_pieces = tokenizer.get_tokens(token_ids)
+print("Tokens:", token_pieces)
+```
+
+---
+
+## 📁 Repository Structure
 
 ```
 MiniBPETokenizer/
 ├── app.py                         # Streamlit Web App with live visualizer
-├── tokenizer.pkl                  # Serialized trained tokenizer model
-├── requirements.txt               # Dependencies for local and cloud deployment
-├── custom_tokenizer (1).ipynb     # Jupyter Notebook containing scratch training logic
+├── tokenizer.pkl                  # Serialized trained CustomTokenizer model
+├── requirements.txt               # App dependencies
+├── custom_tokenizer (1).ipynb     # Jupyter Notebook with full scratch training code
 ├── tokenizer_training_corpus.txt  # Training dataset (~18.9k lines)
-└── my_tokenizer/                  # Saved JSON tokenizer artifacts
-    ├── config.json                # Metadata (vocab size, merges, encoding)
+└── my_tokenizer/                  # Exported JSON artifacts
+    ├── config.json                # Model config and metadata
     ├── merges.json                # 9,744 learned BPE merge rules
     └── vocab.json                 # 10,000 base64-encoded byte token mappings
 ```
 
 ---
 
-## 🚀 Getting Started Locally
+## 🚀 Running the App Locally
 
 ### 1. Clone the Repository
 ```bash
@@ -72,34 +99,22 @@ cd MiniBPETokenizer
 pip install -r requirements.txt
 ```
 
-### 3. Run the Streamlit App
+### 3. Launch Streamlit
 ```bash
 streamlit run app.py
 ```
-
-The app will open automatically at `http://localhost:8501`.
-
----
-
-## 🧠 How the BPE Algorithm Works
-
-1. **Pre-tokenization:** Input text is broken into sub-chunks using the GPT-2 regex pattern:
-   ```python
-   pat = re.compile(r"""'s|'t|'re|'ve|'m|'ll|'d| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+""")
-   ```
-2. **Byte Conversion:** Text chunks are converted into raw UTF-8 byte sequences ($0 \dots 255$).
-3. **Iterative Merging:** In each iteration, the most frequent consecutive pair $(p_0, p_1)$ across the corpus is merged into a new token ID ($256 \dots 9999$).
-4. **Encoding:** At inference time, unknown text is converted to bytes and greedily compressed using the priority order of learned merges.
+Open [http://localhost:8501](http://localhost:8501) in your browser.
 
 ---
 
 ## 👨‍💻 Author
 
 **Raj Kumar Gupta**  
-GitHub: [@MR-ROGUE01](https://github.com/MR-ROGUE01)
+GitHub: [@MR-ROGUE01](https://github.com/MR-ROGUE01)  
+Live Demo: [minibpetokenizer-mr-rogue01.streamlit.app](https://minibpetokenizer-mr-rogue01.streamlit.app/)
 
 ---
 
 ## 📜 License
 
-Distributed under the MIT License. Feel free to use and adapt this project for educational and research purposes.
+This project is licensed under the MIT License. Feel free to use and reference it for learning and research!
