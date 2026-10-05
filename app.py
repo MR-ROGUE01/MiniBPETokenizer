@@ -364,9 +364,9 @@ st.markdown(
         <div class="spec-title">Model Specifications & Corpus Coverage</div>
         <div class="spec-content">
             • <strong>Developer:</strong> Created & Trained by <strong>Raj</strong><br>
-            • <strong>Architecture:</strong> Byte-Level BPE | <strong>Vocabulary:</strong> 10,000 tokens (256 base bytes + 9,744 learned merges)<br>
-            • <strong>Training Corpus:</strong> Curated ~18,900 lines of English technical text, mathematical expressions (Calculus, Greek notation: <em>α, β, ω, ∇, ∑</em>), and code syntax.<br>
-            • <strong>Language Coverage:</strong> Highly optimized for English, math formulas, and code. Out-of-vocabulary scripts (e.g., Hindi / Devanagari) fall back to individual UTF-8 byte tokens.
+            • <strong>Architecture:</strong> Byte-Level BPE | <strong>Vocabulary:</strong> 11,131 tokens (256 base bytes + 10,875 learned merges)<br>
+            • <strong>Corpus Coverage:</strong> English technical prose, code syntax (Python, SQL), advanced mathematics, Hindi / Devanagari (हिन्दी), and Emojis (🚀⚡🔥).<br>
+            • <strong>Multilingual & Unicode Support:</strong> First-class tokenization for Hindi characters/words and emojis, with UTF-8 byte fallback for any rare script.
         </div>
     </div>
     """,
@@ -379,16 +379,21 @@ DEFAULT_TEXT = """# MiniBPETokenizer | Created by Raj
 -- 1. Natural Language
 Hello! This custom Byte-Level BPE tokenizer was built from scratch by Raj.
 
--- 2. Math & Formulas
+-- 2. Hindi & Devanagari (हिन्दी)
+नमस्ते भारत! मेरा नाम राज है।
+
+-- 3. Emojis & Symbols
+🚀 ⚡ 🔥 ✨ ❤️ 🤖
+
+-- 4. Math & Formulas
 f'(x) = n·x^(n-1)  and  y'' + ω²y = 0
 7 + 5 = 12,  9 - 4 = 5,  and  2^10 = 1024
 
--- 3. Python Loop
+-- 5. Python Loop & SQL
 total = 0
 for i in range(5):
     total += i
 
--- 4. SQL Query
 SELECT name, score FROM students WHERE score >= 80;"""
 
 # 2-Column Spacious Layout
