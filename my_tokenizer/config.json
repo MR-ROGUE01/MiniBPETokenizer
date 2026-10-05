@@ -1,14 +1,7 @@
 {
   "tokenizer_type": "ByteLevelBPE",
-  "vocab_size": 11131,
+  "vocab_size": 10000,
   "base_vocab_size": 256,
-  "num_merges": 10875,
-  "languages": [
-    "English",
-    "Hindi/Devanagari (\u0939\u093f\u0928\u094d\u0926\u0940)",
-    "Hinglish",
-    "Emojis",
-    "Mathematics",
-    "Code"
-  ]
+  "num_merges": 9744,
+  "encoding": "utf-8"
 }
