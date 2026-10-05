@@ -27,32 +27,17 @@ class CustomTokenizer:
     def encode(self, text):
         chunks = re.findall(self.pat, text)
         tokens = [b for c in chunks for b in c.encode("utf-8")]
-        if len(tokens) < 2:
-            return tokens
-
-        merges = self.merges
         while len(tokens) >= 2:
-            min_rank = float("inf")
-            best_pair = None
-            for i in range(len(tokens) - 1):
-                pair = (tokens[i], tokens[i + 1])
-                rank = merges.get(pair)
-                if rank is not None and rank < min_rank:
-                    min_rank = rank
-                    best_pair = pair
-                    if rank == 256:  # 256 is the absolute lowest merge rank
-                        break
-
-            if best_pair is None:
+            stats = {p: 0 for p in zip(tokens, tokens[1:])}
+            for p in zip(tokens, tokens[1:]):
+                stats[p] += 1
+            pair = min(stats, key=lambda p: self.merges.get(p, float("inf")))
+            if pair not in self.merges:
                 break
-
-            idx = merges[best_pair]
-            p0, p1 = best_pair
-            newids = []
-            i = 0
-            n = len(tokens)
-            while i < n:
-                if i < n - 1 and tokens[i] == p0 and tokens[i + 1] == p1:
+            idx = self.merges[pair]
+            newids, i = [], 0
+            while i < len(tokens):
+                if i < len(tokens) - 1 and (tokens[i], tokens[i + 1]) == pair:
                     newids.append(idx)
                     i += 2
                 else:
