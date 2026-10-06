@@ -56,10 +56,6 @@ class CustomTokenizer:
                 pieces.append("".join(f"<0x{b:02X}>" for b in raw))
         return pieces
 
-    def decode(self, ids):
-        tokens = [self.vocab[idx] for idx in ids]
-        return b"".join(tokens).decode("utf-8", errors="replace")
-
 
 class SafeUnpickler(pickle.Unpickler):
     def find_class(self, module, name):

@@ -47,39 +47,24 @@ Trained on **~18,900 lines** (~866,000 characters) of curated data:
 
 ## 🛠️ Quick Usage in Python
 
-You can load and use the trained tokenizer directly in your own code or notebook:
+You can load and use the trained tokenizer directly in your own code:
 
 ```python
-# Option 1: Direct import (recommended)
-from app import model as tokenizer
-
-text = "Hello world! Building GPT from scratch."
-
-# 1. ENCODE: Text -> Token IDs
-token_ids = tokenizer.encode(text)
-print("Token IDs:", token_ids)
-
-# 2. SUBWORDS: Token IDs -> Pieces
-token_pieces = tokenizer.get_tokens(token_ids)
-print("Tokens:", token_pieces)
-
-# 3. DECODE: Token IDs -> Original Text
-decoded_text = tokenizer.decode(token_ids)
-print("Decoded Text:", decoded_text)
-```
-
-Or load directly from `tokenizer.pkl`:
-
-```python
-# Option 2: Using pickle
 import pickle
-from app import CustomTokenizer
+import regex as re
 
+# Load the trained model
 with open("tokenizer.pkl", "rb") as f:
     tokenizer = pickle.load(f)
 
-token_ids = tokenizer.encode("Hello world!")
-print("Decoded:", tokenizer.decode(token_ids))
+# Encode text into token IDs
+text = "Hello world! Building GPT from scratch."
+token_ids = tokenizer.encode(text)
+print("Token IDs:", token_ids)
+
+# Decode token IDs into individual token strings
+token_pieces = tokenizer.get_tokens(token_ids)
+print("Tokens:", token_pieces)
 ```
 
 ---
