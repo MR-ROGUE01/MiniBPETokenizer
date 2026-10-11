@@ -2,6 +2,8 @@ import html
 import pickle
 import logging
 import warnings
+import heapq
+from collections import defaultdict
 import regex as re
 from functools import lru_cache
 import streamlit as st
@@ -25,26 +27,84 @@ class CustomTokenizer:
         )
 
     def encode(self, text):
+        if not text:
+            return []
         chunks = re.findall(self.pat, text)
         tokens = [b for c in chunks for b in c.encode("utf-8")]
-        while len(tokens) >= 2:
-            stats = {p: 0 for p in zip(tokens, tokens[1:])}
-            for p in zip(tokens, tokens[1:]):
-                stats[p] += 1
-            pair = min(stats, key=lambda p: self.merges.get(p, float("inf")))
-            if pair not in self.merges:
-                break
-            idx = self.merges[pair]
-            newids, i = [], 0
-            while i < len(tokens):
-                if i < len(tokens) - 1 and (tokens[i], tokens[i + 1]) == pair:
-                    newids.append(idx)
-                    i += 2
-                else:
-                    newids.append(tokens[i])
-                    i += 1
-            tokens = newids
-        return tokens
+        n = len(tokens)
+        if n < 2:
+            return tokens
+
+        prev_arr = list(range(-1, n - 1))
+        next_arr = list(range(1, n + 1))
+        next_arr[-1] = -1
+        val_arr = list(tokens)
+
+        pair_locs = defaultdict(set)
+        heap = []
+        seen_pairs = set()
+
+        for i in range(n - 1):
+            pair = (val_arr[i], val_arr[i + 1])
+            if pair in self.merges:
+                pair_locs[pair].add(i)
+                if pair not in seen_pairs:
+                    heapq.heappush(heap, (self.merges[pair], pair))
+                    seen_pairs.add(pair)
+
+        while heap:
+            rank, pair = heapq.heappop(heap)
+            locs = pair_locs.get(pair)
+            if not locs:
+                continue
+
+            del pair_locs[pair]
+            seen_pairs.discard(pair)
+
+            for idx in sorted(locs):
+                nxt = next_arr[idx]
+                if nxt == -1 or val_arr[idx] != pair[0] or val_arr[nxt] != pair[1]:
+                    continue
+
+                prv = prev_arr[idx]
+                nxt2 = next_arr[nxt]
+
+                if prv != -1:
+                    old_p = (val_arr[prv], val_arr[idx])
+                    if old_p in pair_locs:
+                        pair_locs[old_p].discard(prv)
+                if nxt2 != -1:
+                    old_p = (val_arr[nxt], val_arr[nxt2])
+                    if old_p in pair_locs:
+                        pair_locs[old_p].discard(nxt)
+
+                val_arr[idx] = rank
+                next_arr[idx] = nxt2
+                if nxt2 != -1:
+                    prev_arr[nxt2] = idx
+
+                if prv != -1:
+                    new_p = (val_arr[prv], rank)
+                    if new_p in self.merges:
+                        pair_locs[new_p].add(prv)
+                        if new_p not in seen_pairs:
+                            heapq.heappush(heap, (self.merges[new_p], new_p))
+                            seen_pairs.add(new_p)
+
+                if nxt2 != -1:
+                    new_p = (rank, val_arr[nxt2])
+                    if new_p in self.merges:
+                        pair_locs[new_p].add(idx)
+                        if new_p not in seen_pairs:
+                            heapq.heappush(heap, (self.merges[new_p], new_p))
+                            seen_pairs.add(new_p)
+
+        out = []
+        curr = 0
+        while curr != -1:
+            out.append(val_arr[curr])
+            curr = next_arr[curr]
+        return out
 
     def get_tokens(self, ids):
         pieces = []
